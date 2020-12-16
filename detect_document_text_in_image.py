@@ -43,7 +43,6 @@ def get_document_bounds(image_file, feature):
     for page in document.pages:
         for block in page.blocks:
             for paragraph in block.paragraphs:
-                print('a')
                 for word in paragraph.words:
                     for symbol in word.symbols:
                         if (feature == FeatureType.SYMBOL):
@@ -119,4 +118,4 @@ def detect_document(path):
 if __name__ == "__main__":
     # result = detect_document('static/text2.jpg')
     # print(result)
-    render_doc_text("static/text4.jpg", "static/bla.jpg")
+    render_doc_text("static/text2.jpg", "static/bla.jpg")

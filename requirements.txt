@@ -13,6 +13,7 @@ google-cloud-vision==2.0.0
 googleapis-common-protos==1.52.0
 grpcio==1.34.0
 idna==2.10
+imutils==0.5.3
 ipython==7.16.1
 ipython-genutils==0.2.0
 itsdangerous==1.1.0
