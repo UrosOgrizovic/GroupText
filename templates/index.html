@@ -1,0 +1,39 @@
+<! DOCTYPE html>
+<html>
+    <head>
+        <title>Upload new File</title>
+    </head>
+    <body>
+        <h1>Upload new File</h1>
+        <form method=post enctype=multipart/form-data>
+          <input type=file name=file>
+          <input type=submit value=Upload>
+        </form>
+        <div id="result"></div>
+        <div id="imageContainer"></div>
+    </body>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!--    <script type="text/javascript" src="{{ url_for('static', filename = 'index.js') }}"></script>-->
+    <script>
+            $("form").submit(function(event) {
+               event.preventDefault();
+               var formData = new FormData($(this)[0]);
+                $.ajax({
+                   url: '/',
+                   type: 'POST',
+                   data: formData,
+                   cache: false,
+                   contentType: false,
+                   enctype: 'multipart/form-data',
+                   processData: false,
+                   success: function (response) {
+                        $("#result").html("Detected text: " + JSON.stringify(response.result));
+                        var imgData = "data:image/jpeg;charset=utf-8;base64," + response.image;
+                        var imgElement = "<img src=" + imgData + " id='image'/>";
+                        $("#imageContainer").html(imgElement);
+                   }
+                });
+            });
+        </script>
+</html>
