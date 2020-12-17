@@ -1,2 +1,2 @@
 # GroupText
-Use OCR to group text from photo to lines and paragraphs.
+Use the Google Vision API to get text from photos. Group that text to paragraphs using NLP.
