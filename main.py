@@ -2,7 +2,7 @@ import os
 from flask import Flask, flash, request, redirect, url_for, send_from_directory, render_template, json
 from werkzeug.utils import secure_filename
 from werkzeug.serving import run_simple
-from detect_document_text_in_image import detect_document, render_doc_text
+from detect_document_text_in_image import detect_document, render_doc_text, perform_finding_lines
 from PIL import Image
 import base64
 
@@ -51,7 +51,8 @@ def upload_file():
             # filename = secure_filename(file.filename)
             path = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_img.jpg')
             file.save(path)
-            render_doc_text(path, OUTPUT_FILE_PATH)
+            # render_doc_text(path, OUTPUT_FILE_PATH)
+            perform_finding_lines(path)
             result = detect_document(path)
             resize_image(Image.open(OUTPUT_FILE_PATH)).save(OUTPUT_FILE_PATH)
             image_string = read_image(OUTPUT_FILE_PATH)
@@ -59,15 +60,6 @@ def upload_file():
                                       status=200,
                                       mimetype='application/json')
     return render_template("index.html")
-    # return '''
-    # <!doctype html>
-    # <title>Upload new File</title>
-    # <h1>Upload new File</h1>
-    # <form method=post enctype=multipart/form-data>
-    #   <input type=file name=file>
-    #   <input type=submit value=Upload>
-    # </form>
-    # '''
 
 
 @app.route('/uploads/<filename>')
@@ -76,11 +68,5 @@ def uploaded_file(filename):
                                filename)
 
 
-# @app.route("/")
-# def hello():
-#     return "Hello World!"
-
-
 if __name__ == "__main__":
-    # app.run()  # Flask
     run_simple("localhost", 5000, app)  # Werkzeug
