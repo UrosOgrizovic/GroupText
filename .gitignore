@@ -133,3 +133,5 @@ TextToLines-86cfdb405398.json
 
 .idea/
 grouptext/
+nlp/extracted/
+nlp/glove/
