@@ -135,3 +135,4 @@ TextToLines-86cfdb405398.json
 grouptext/
 nlp/extracted/
 nlp/glove/
+nlp/saved_models/
