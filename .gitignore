@@ -136,3 +136,4 @@ grouptext/
 nlp/extracted/
 nlp/glove/
 nlp/saved_models/
+gtvenv/
