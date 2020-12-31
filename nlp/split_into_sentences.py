@@ -16,7 +16,6 @@ def remove_digits(text, replace_with):
 def regex(text):
     text = re.sub("http\S+", "URL", text)  # replace urls
     text = re.compile("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}").sub(r"IPADDRESS", text)  # replace ip addresses
-    # text = re.sub("(\s\d+)", "NUM", text)  # replace numbers
     text = remove_digits(text, "#")
     return text
 

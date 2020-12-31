@@ -91,3 +91,53 @@ TEXT_4 = "Kaf, Ha. Ya, 'Ayn, Sad. (1) [This is) a mention of the mercy of your L
          "a\nboy while no man has touched me and I have not been unchaste?\" (20) He said, \"Thus [it will be]; your " \
          "Lord says,\n\"It is easy for Me, and we will make him a sign to the people and a mercy from Us. And it is a " \
          "matter (already]\ndecreed.' (21)\n "
+
+TEXT_5 = "An apéritif is an alcoholic beverage usually served before a meal to stimulate the appetite, " \
+         "and is therefore usually dry rather than sweet. Common choices for an apéritif are vermouth; champagne; " \
+         "pastis; gin; arak; rakı; fino, amontillado or other styles of dry sherry (but not usually cream or oloroso " \
+         "blended sherry, which is very sweet and rich); and any still, dry, light white wine. An apéritif may be " \
+         "served with an hors d'oeuvre or amuse-bouche, such as crackers, cheese, pâté, quiche or olives. Apéritif is " \
+         "a French word derived from the Latin verb aperire, which means \"to open\". The French colloquial word for " \
+         "apéritif is apéro. The 5th-century Christian ascetic Diadochos of Photiki says, \"People who wish to " \
+         "discipline the sexual organs should avoid drinking those artificial concoctions which are called " \
+         "'aperitifs'—presumably because they open a way to the stomach for the vast meal which is to follow.\" This " \
+         "means that apéritifs have existed since at least the 5th century. In 1796, Turin distiller Antonio Carpano " \
+         "invented modern vermouth. The apéritif was introduced in France in 1846 when a French chemist, " \
+         "Joseph Dubonnet, created his eponymous wine-based drink as a means of delivering malaria-fighting quinine. " \
+         "The medicine was a bitter brew, so he developed a formula of herbs and spices to mask quinine's sharp " \
+         "flavor, and it worked so well that the recipe has remained well-guarded ever since. French Foreign Legion " \
+         "soldiers made use of it in mosquito-infested Northern Africa. Dubonnet's wife was so fond of the drink that " \
+         "she had all her friends try it, and its popularity spread. Five glasses of apéritif and mixed nuts. " \
+         "Apéritifs were already widespread in the 19th century in Italy, where they were being served in fashionable " \
+         "cafés in Turin (where they were born), Rome, Genoa, Florence, Milan and Venice. Apéritifs became very " \
+         "popular in Europe in the late 19th century. The popularity in Europe crossed the Atlantic and by 1900, " \
+         "they were also commonly served in the United States. The apéritif recrossed the Atlantic in the 1970s: the " \
+         "habit of a substantial food offering with the purchase of a drink during \"Happy Hour\" in the United " \
+         "States pushed the development of a more food-heavy apéritif in Italy as well. In Spain and in some " \
+         "countries of Latin America, apéritifs have been a staple of tapas for centuries. There is no single " \
+         "alcoholic drink that is always served as an apéritif. Fortified wine, liqueur, and dry champagne are " \
+         "probably the most common choices. Because it is served before dining, the emphasis is usually on dry rather " \
+         "than sweet, as a general guideline. In France, the apéritif varies from region to region: pastis is popular " \
+         "in the south of France, Calvados brandy in the Normandy region, Crémant d'Alsace in the eastern region. " \
+         "Champagne wine or Cognac may also be served. Kir, also called Blanc-cassis, is a common and very popular " \
+         "apéritif-cocktail made with a measure of crème de cassis (blackcurrant liqueur) topped up with white wine " \
+         "like bourgogne aligoté. The word Kir Royal is used when white wine is replaced with a Champagne wine. A " \
+         "simple glass of red wine, such as Beaujolais nouveau, can also be presented as an apéritif, accompanied by " \
+         "amuse-bouches. In Italy, vermouth or wine may be served as the apéritif (called aperitivo). Martini, " \
+         "Aperol Spritz and Campari with soda are also popular aperitivo drinks of choice. In Greece, " \
+         "ouzo is a popular choice, except on Crete, where it is very common to take some Tsikoudia (raki) after a " \
+         "meal. In the Eastern Mediterranean, arak is served with meze. In Britain and Ireland sherry and dry madeira " \
+         "are traditional apéritifs. A digestif is an alcoholic beverage served after a meal, to aid digestion. When " \
+         "served after a coffee course, it may be called pousse-café. Digestifs are usually taken neat. Common kinds " \
+         "of digestif include: Brandy (Cognac, Armagnac, alembic-made), Chacha, Eaux de vie (fruit brandies, " \
+         "Schnapps, Calvados), Pomace brandy (grappa), Tsikoudia, Fortified wines (sweet sherry (usually cream or " \
+         "oloroso sherry), vermouth, port, madeira, and Ratafia), Liqueurs bitter or sweet (Drambuie, Amaretto, " \
+         "Bénédictine, amari (such as fernet), herbal liqueur, Sambuca, Chartreuse, Grand Marnier, Jägermeister, " \
+         "Irish Mist, Kahlúa, limoncello, Herbs de Majorca, Beirão, Unicum, Underberg, Fernet-Branca, Mirto, Malort), " \
+         "Distilled liquors (ouzo, schnapps, tequila or akvavit) Liquor cocktails (Black Russian, Rusty Nail, etc.), " \
+         "Bitter digestifs typically contain carminative herbs, which are thought to aid digestion. In many " \
+         "countries, people drink alcoholic beverages at lunch and dinner. Studies have found that when food is eaten " \
+         "before drinking alcohol, alcohol absorption is reduced and the rate at which alcohol is eliminated from the " \
+         "blood is increased. The mechanism for the faster alcohol elimination appears to be unrelated to the type of " \
+         "food. The mechanism is likely food-induced, which increases in alcohol-metabolizing enzymes and liver blood " \
+         "flow."

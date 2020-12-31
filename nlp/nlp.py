@@ -2,7 +2,7 @@ import rnn_model
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 from keras.utils import to_categorical
-from constants import TEXT_1, TEXT_2, TEXT_3, TEXT_4
+import constants
 import numpy as np
 import os
 import gc
@@ -33,53 +33,11 @@ def calculate_embedding_matrix(word_index, embedding_dim):
     return embedding_matrix
 
 
-def read_lines(num_rows=50000):
-    lines = []
-    starts_new_segment = False
-    max_len_line = 0
-    x_tr, y_tr, x_tst, y_tst = [], [], [], []
-    with open("extracted/wiki_727K", "rt", encoding="utf-8") as myfile:
-        for i in range(num_rows):
-            line = next(myfile)[:-2]
-            # skip these lines, I'm not sure if they are meaningful or metadata
-            if line.startswith("\x00") or line.startswith("wiki_") or line.startswith("***LIST"):
-                continue
-            line = regex(line)
-            max_len_line = len(line) if len(line) > max_len_line else max_len_line
-            if i > 0.8 * num_rows:
-                if line.startswith(SEGMENT_DELIMITER):  # denotes new segment title
-                    starts_new_segment = True  # the next line starts a new segment
-                    continue  # no need to add segment title to data
-                if starts_new_segment:
-                    y_tst.append(1)  # this line starts a segment
-                    starts_new_segment = False
-                else:
-                    if random.random() > 0.9:  # attempting to create a more balanced dataset
-                        y_tst.append(0)
-                    else:
-                        continue
-                x_tst.append(line)
-            else:
-                if line.startswith(SEGMENT_DELIMITER):  # denotes new segment title
-                    starts_new_segment = True  # the next line starts a new segment
-                    continue  # no need to add segment title to data
-                if starts_new_segment:
-                    y_tr.append(1)  # this line starts a segment
-                    starts_new_segment = False
-                else:
-                    if random.random() > 0.9:  # attempting to create a more balanced dataset
-                        y_tr.append(0)
-                    else:
-                        continue
-                x_tr.append(line)
-            lines.append(line)
-
-    return x_tr, y_tr, x_tst, y_tst, max_len_line, lines
-
-
 def train_model(x_tr, y_tr, batch_size, num_epochs, validation_split, save_model_path, tokenizer, embedding_matrix,
                 embedding_dim, num_sen_per_doc, sen_len):
+    print("Creating model...")
     model = rnn_model.create_model(len(tokenizer.word_index), embedding_matrix, embedding_dim, num_sen_per_doc, sen_len)
+    print("Finished creating model")
     # print(model.summary())
     # history = rnn_model.train_model(model, save_model_path, x_tr, y_tr, batch_size, num_epochs, validation_split)
     model.fit(x_tr, y_tr, epochs=num_epochs, batch_size=batch_size, validation_split=validation_split)
@@ -90,9 +48,10 @@ def train_model(x_tr, y_tr, batch_size, num_epochs, validation_split, save_model
     # train_loss = history.history['loss']
     # val_loss = history.history['val_loss']
     # data_operations.plot_training_and_validation_data(train_acc, val_acc, train_loss, val_loss, num_rows)
+    print(f"Finished training and model saved to path {save_model_path}")
 
 
-def evaluate_model(x_tst, y_tst, save_model_path, text, tokenizer):
+def evaluate_model(x_tst, y_tst, save_model_path, text, tokenizer, max_len):
     model = load_model(save_model_path)
     # print(f"Evaluating model: [loss, accuracy]: {model.evaluate(x_tst, y_tst)}")
 
@@ -100,7 +59,7 @@ def evaluate_model(x_tst, y_tst, save_model_path, text, tokenizer):
     # for i in range(len(text)):
     #     print(f"#{str(i)}: {text[i]}")
     seq_text = tokenizer.texts_to_sequences(text)
-    seq_text = pad_sequences(seq_text, max_len_par)
+    seq_text = pad_sequences(seq_text, max_len)
     seq_text = seq_text.reshape(1, seq_text.shape[0], seq_text.shape[1])
     len_before_padding = seq_text.shape[1]
     seq_text = pad_sequences(seq_text, longest_doc_len)
@@ -120,9 +79,10 @@ def read_docs(num_docs=100):
     list_of_all_words = []
     sentence_document = {}  # sentence_index: document_index
     y_tr, y_tst = [], []
-    max_len_par = 0
     starts_new_segment = False
+    sentence_lengths = []
     document_index, sentence_index = -1, 0
+    print(f"Loading {num_docs} documents...")
     with open("extracted/wiki_727K", "rt", encoding="utf-8") as myfile:
         while document_index < num_docs:
             line = next(myfile)[:-2]
@@ -131,7 +91,6 @@ def read_docs(num_docs=100):
                 document_index += 1
                 starts_new_segment = True  # the next line starts a new segment
                 if current_paragraph_x:
-                    max_len_par = len(current_paragraph_x) if len(current_paragraph_x) > max_len_par else max_len_par
                     current_paragraph_x = []
                 continue
             # skip these lines, I'm not sure if they are meaningful or metadata
@@ -143,7 +102,6 @@ def read_docs(num_docs=100):
             line = regex(line)
             if document_index > 0.8 * num_docs:
                 if line.startswith(SEGMENT_DELIMITER):     # denotes new segment title
-                    max_len_par = len(current_paragraph_x) if len(current_paragraph_x) > max_len_par else max_len_par
                     current_paragraph_x = []
                     starts_new_segment = True   # the next line starts a new segment
                     continue    # no need to add segment title to data
@@ -153,11 +111,9 @@ def read_docs(num_docs=100):
                     starts_new_segment = False
                 else:
                     y_tst.append(0)
-                    # current_paragraph_y.append(0)
                     current_paragraph_x.append(line)
             else:
                 if line.startswith(SEGMENT_DELIMITER):     # denotes new segment title
-                    max_len_par = len(current_paragraph_x) if len(current_paragraph_x) > max_len_par else max_len_par
                     current_paragraph_x = []
                     starts_new_segment = True   # the next line starts a new segment
                     continue    # no need to add segment title to data
@@ -171,34 +127,39 @@ def read_docs(num_docs=100):
             list_of_all_words.append(line.split(" "))
             sentence_document[sentence_index] = document_index
             sentence_index += 1
-
-    return y_tr, y_tst, max_len_par, list_of_all_words, sentence_document
+            sentence_lengths.append(len(line.split(" ")))
+    print("Finished loading documents")
+    avg_sen_len = round(sum(sentence_lengths) / len(sentence_lengths))
+    return y_tr, y_tst, list_of_all_words, sentence_document, avg_sen_len
 
 
 if __name__ == "__main__":
-    num_docs, num_rows, num_words = 1000, 10000, 1000
+    num_docs, num_rows = 100, 10000
     save_model_path = "saved_models/model" + str(num_docs) + ".h5"
-    starts_new_segment = False
-    #x_tr, y_tr, x_tst, y_tst, max_len_line, collection = read_lines()
-    y_tr, y_tst, max_len_par, list_of_all_words, sentence_document_mapping = read_docs(num_docs)
+    y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len = read_docs(num_docs)
+    # num_words = 5000
     # convert strings to numbers
-    tokenizer = Tokenizer(num_words=num_words)
+    tokenizer = Tokenizer()
     # tokenizer.fit_on_texts(collection)
+    print("Fitting tokenizer...")
     tokenizer.fit_on_texts(list_of_all_words)
+    print("Finished fitting tokenizer")
 
     sequences = tokenizer.texts_to_sequences(list_of_all_words)
+    del list_of_all_words
+    gc.collect()
 
+    max_len = avg_sen_len + 5
 
-    # most sentences/paragraphs aren't that long
-    # max_len_line = max_len_line // 2
-    max_len_par = max_len_par // 2
-    # perform padding
-    sequences = pad_sequences(sequences, max_len_par)
-
+    # perform padding/truncating (truncate ends of sentences, because beginnings are more important for this task)
+    sequences = pad_sequences(sequences, max_len, truncating='post')
     # 80/20 train-test split
     x_tr, x_tst = sequences[:len(y_tr)], sequences[len(y_tr):]
 
+    del sequences
+    gc.collect()
 
+    # group data as documents
     documents_x_tr, documents_y_tr = [], []
     documents_x_tst, documents_y_tst = [], []
     curr_doc_x, curr_doc_y = [x_tr[0]], [y_tr[0]]
@@ -225,7 +186,9 @@ if __name__ == "__main__":
             curr_doc_x.append(x_tst[i])
             curr_doc_y.append(y_tst[i])
 
-    # np.append(documents_x_tr[-1], x_tr[-1])
+    del sentence_document_mapping
+    gc.collect()
+
     documents_x_tr[-1].append(x_tr[-1])
     documents_x_tst[-1].append(x_tst[-1])
     np.append(documents_y_tr[-1], y_tr[-1])
@@ -239,10 +202,13 @@ if __name__ == "__main__":
     x_tst = np.array(documents_x_tst, dtype='object')
     y_tst = np.array(documents_y_tst, dtype='object')
 
-    # print(y_tr.shape)
-    # print(y_tr[0].shape)
-    # print(y_tr[0])
-    # exit()
+    del documents_x_tr
+    del documents_y_tr
+    del documents_x_tst
+    del documents_y_tst
+    del curr_doc_x
+    del curr_doc_y
+    gc.collect()
 
     longest_doc_len = 0
     for doc in x_tr:
@@ -263,16 +229,8 @@ if __name__ == "__main__":
     
     y_tr.shape = (num_docs_tr, num_sen_in_longest_doc)
     '''
-    # print(x_tr.shape, x_tr[0].shape, x_tr[0][0].shape)  # (num_docs_tst, 254, 52), (254, 52), (52,)
-    # print(x_tst.shape, x_tst[0].shape, x_tst[0][0].shape)  # (num_docs_tst, 254, 52), (254, 52), (52,)
-    # print(y_tr.shape, y_tr[0].shape)    # (num_docs_tr, 254), (254,)
-    # print(y_tst.shape, y_tst[0].shape)  # (num_docs_tst, 254), (254,)
-    # exit()
 
-    del sequences
-    gc.collect()
-
-    embedding_dim = 100
+    embedding_dim = 50
     embedding_matrix = calculate_embedding_matrix(tokenizer.word_index, embedding_dim)
 
     num_docs_tr = x_tr.shape[0]
@@ -280,16 +238,16 @@ if __name__ == "__main__":
     num_sen_per_doc = x_tr.shape[1]
     sen_len = x_tr.shape[2]
 
-    batch_size = 10
+    batch_size = 32
     num_epochs = 3
     validation_split = 0.1
     y_tr = y_tr.reshape(num_docs_tr, num_sen_per_doc, 1)
     y_tst = y_tst.reshape(num_docs_tst, num_sen_per_doc, 1)
 
-    texts = [TEXT_1, TEXT_2, TEXT_3, TEXT_4]
-    train = True
+    texts = [constants.TEXT_1, constants.TEXT_2, constants.TEXT_3, constants.TEXT_4, constants.TEXT_5]
+    train = False
     if train:
         train_model(x_tr, y_tr, batch_size, num_epochs, validation_split, save_model_path, tokenizer, embedding_matrix,
                 embedding_dim, num_sen_per_doc, sen_len)
     else:
-        evaluate_model(x_tst, y_tst, save_model_path, texts[1], tokenizer)
+        evaluate_model(x_tst, y_tst, save_model_path, texts[4], tokenizer, max_len)
