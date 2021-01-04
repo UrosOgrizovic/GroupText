@@ -55,6 +55,8 @@ def evaluate_model(x_tst, y_tst, save_model_path, text, tokenizer, max_len):
     model = load_model(save_model_path)
     # print(f"Evaluating model: [loss, accuracy]: {model.evaluate(x_tst, y_tst)}")
 
+    text = regex(text)
+    text = text.lower()
     text = split_text_into_sentences(text)
     # for i in range(len(text)):
     #     print(f"#{str(i)}: {text[i]}")
@@ -74,69 +76,11 @@ def evaluate_model(x_tst, y_tst, save_model_path, text, tokenizer, max_len):
         #     print(f"-{text[i]}")
 
 
-def read_docs(num_docs=100):
-    current_paragraph_x = []
-    list_of_all_words = []
-    sentence_document = {}  # sentence_index: document_index
-    y_tr, y_tst = [], []
-    starts_new_segment = False
-    sentence_lengths = []
-    document_index, sentence_index = -1, 0
-    print(f"Loading {num_docs} documents...")
-    with open("extracted/wiki_727K", "rt", encoding="utf-8") as myfile:
-        while document_index < num_docs:
-            line = next(myfile)[:-2]
-            # new document, increase document_index
-            if "1,preface" in line:
-                document_index += 1
-                starts_new_segment = True  # the next line starts a new segment
-                if current_paragraph_x:
-                    current_paragraph_x = []
-                continue
-            # skip these lines, I'm not sure if they are meaningful or metadata
-            if line.startswith("\x00") or line.startswith("wiki_") or line.startswith("***LIST"):
-                continue
-            # start of subsection in section
-            if len(current_paragraph_x) == 0 and line.startswith(SEGMENT_DELIMITER):
-                continue
-            line = regex(line)
-            if document_index > 0.8 * num_docs:
-                if line.startswith(SEGMENT_DELIMITER):     # denotes new segment title
-                    current_paragraph_x = []
-                    starts_new_segment = True   # the next line starts a new segment
-                    continue    # no need to add segment title to data
-                if starts_new_segment:
-                    current_paragraph_x.append(line)
-                    y_tst.append(1)
-                    starts_new_segment = False
-                else:
-                    y_tst.append(0)
-                    current_paragraph_x.append(line)
-            else:
-                if line.startswith(SEGMENT_DELIMITER):     # denotes new segment title
-                    current_paragraph_x = []
-                    starts_new_segment = True   # the next line starts a new segment
-                    continue    # no need to add segment title to data
-                if starts_new_segment:
-                    y_tr.append(1)
-                    current_paragraph_x.append(line)
-                    starts_new_segment = False
-                else:
-                    y_tr.append(0)
-                    current_paragraph_x.append(line)
-            list_of_all_words.append(line.split(" "))
-            sentence_document[sentence_index] = document_index
-            sentence_index += 1
-            sentence_lengths.append(len(line.split(" ")))
-    print("Finished loading documents")
-    avg_sen_len = round(sum(sentence_lengths) / len(sentence_lengths))
-    return y_tr, y_tst, list_of_all_words, sentence_document, avg_sen_len
-
-
 if __name__ == "__main__":
-    num_docs, num_rows = 100, 10000
+    num_docs, num_rows = 1000, 10000
     save_model_path = "saved_models/model" + str(num_docs) + ".h5"
-    y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len = read_docs(num_docs)
+    read_docs_path = "extracted/wiki_727K"
+    y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len = data_operations.read_docs(read_docs_path, num_docs)
     # num_words = 5000
     # convert strings to numbers
     tokenizer = Tokenizer()
@@ -245,7 +189,7 @@ if __name__ == "__main__":
     y_tst = y_tst.reshape(num_docs_tst, num_sen_per_doc, 1)
 
     texts = [constants.TEXT_1, constants.TEXT_2, constants.TEXT_3, constants.TEXT_4, constants.TEXT_5]
-    train = False
+    train = True
     if train:
         train_model(x_tr, y_tr, batch_size, num_epochs, validation_split, save_model_path, tokenizer, embedding_matrix,
                 embedding_dim, num_sen_per_doc, sen_len)
