@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
-from split_into_sentences import regex, parse_sentence
+from text_preprocessing import parse_sentence
 
 SEGMENT_DELIMITER = "========"
 
 
-def plot_training_and_validation_data(train_acc, val_acc, train_loss, val_loss, num_rows):
+def plot_training_and_validation_data(train_acc, val_acc, train_loss,
+                                      val_loss, num_rows):
     """
     plots training and validation curves
     :param train_acc:
@@ -56,17 +57,20 @@ def read_docs(path, num_docs=100):
                     current_paragraph_x = []
                 continue
             # skip these lines, I'm not sure if they are meaningful or metadata
-            if line.startswith("\x00") or line.startswith("wiki_") or line.startswith("***LIST"):
+            if line.startswith("\x00") or line.startswith("wiki_") \
+                    or line.startswith("***LIST"):
                 continue
             # start of subsection in section
-            if len(current_paragraph_x) == 0 and line.startswith(SEGMENT_DELIMITER):
+            if len(current_paragraph_x) == 0 \
+                    and line.startswith(SEGMENT_DELIMITER):
                 continue
-            # line = regex(line)
             line = parse_sentence(line)
             if document_index > 0.8 * num_docs:
-                if line.startswith(SEGMENT_DELIMITER):     # denotes new segment title
+                # denotes new segment title
+                if line.startswith(SEGMENT_DELIMITER):
                     current_paragraph_x = []
-                    starts_new_segment = True   # the next line starts a new segment
+                    # the next line starts a new segment
+                    starts_new_segment = True
                     continue    # no need to add segment title to data
                 if starts_new_segment:
                     current_paragraph_x.append(line)
@@ -76,9 +80,11 @@ def read_docs(path, num_docs=100):
                     y_tst.append(0)
                     current_paragraph_x.append(line)
             else:
-                if line.startswith(SEGMENT_DELIMITER):     # denotes new segment title
+                # denotes new segment title
+                if line.startswith(SEGMENT_DELIMITER):
                     current_paragraph_x = []
-                    starts_new_segment = True   # the next line starts a new segment
+                    # the next line starts a new segment
+                    starts_new_segment = True
                     continue    # no need to add segment title to data
                 if starts_new_segment:
                     y_tr.append(1)
@@ -95,7 +101,9 @@ def read_docs(path, num_docs=100):
     avg_sen_len = round(sum(sentence_lengths) / len(sentence_lengths))
     return y_tr, y_tst, list_of_all_words, sentence_document, avg_sen_len
 
+
 if __name__ == '__main__':
-    y_tr, y_tst, list_of_all_words, sentence_document, avg_sen_len = read_docs("extracted/wiki_727K", 1000)
+    y_tr, y_tst, list_of_all_words, sentence_document, \
+        avg_sen_len = read_docs("extracted/wiki_727K", 1000)
     # print(len(list_of_all_words))
     # print(list_of_all_words)

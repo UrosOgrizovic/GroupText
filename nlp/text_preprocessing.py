@@ -1,9 +1,9 @@
 import nltk
-from constants import TEXT_1, TEXT_2, TEXT_3, TEXT_4
+from constants import TEXT_3
 import re
 from collections import Counter
 from string import printable
-
+from unidecode import unidecode
 
 UPPERCASE_LETTERS = [chr(i) for i in range(65, 91)]
 LOWERCASE_LETTERS = [chr(i) for i in range(97, 123)]
@@ -17,7 +17,8 @@ def replace_digits(text, replace_with="#"):
 
     Args:
         text (string): text to modify
-        replace_with (str, optional): character to replace with. Defaults to "#".
+        replace_with (str, optional): character to replace with. Defaults to
+        "#".
 
     Returns:
         new_text: modified text
@@ -41,7 +42,8 @@ def regex(text):
         text: modified text
     """
     text = re.sub(r"http\S+", "URL", text)  # replace urls
-    text = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}").sub(r"IPADDRESS", text)  # replace ip addresses
+    text = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}").sub(
+        r"IPADDRESS", text)  # replace ip addresses
     text = replace_digits(text, "#")
     return text
 
@@ -60,17 +62,27 @@ def replace_newline(text):
     return text
 
 
+def remove_accented_chars(text):
+    """Remove accented characters from text, e.g. café
+
+    Args:
+        text (string): text to process
+
+    Returns:
+        string: processed text
+    """
+    text = unidecode(text)
+    return text
+
+
 def split_text_into_sentences(text):
-    sents = nltk.tokenize.sent_tokenize(text)
-    for i in range(len(sents)):
-        sents[i] = replace_newline(sents[i])
-    for i in range(len(sents)):
-        sents[i] = lemmatization(sents[i])
-    return sents
+    return nltk.tokenize.sent_tokenize(text)
 
 
 def parse_sentence(sent):
-    """Regex, replace newline and lemmatization on a single sentence.
+    """Remove accented characters, regex,
+        replace newline and lemmatization
+        on a single sentence.
 
     Args:
         sent (string): sentence to modify
@@ -78,6 +90,7 @@ def parse_sentence(sent):
     Returns:
         sent: modified sent
     """
+    sent = remove_accented_chars(sent)
     sent = regex(sent)
     sent = replace_newline(sent)
     return lemmatization(sent)
@@ -97,17 +110,19 @@ def lemmatization(sent):
     sent = sent.split(" ")
     for i in range(len(sent)):
         word = sent[i]
-        filtered_word =  ''.join(filter(lambda x: x in printable, word))
+        filtered_word = ''.join(filter(lambda x: x in printable, word))
         # eliminate stop words and non-english words, such as ὀρθός
-        if len(word) > 0 and word not in STOP_WORDS and len(filtered_word) == len(word):
+        if len(word) > 0 and word not in STOP_WORDS and len(filtered_word) == \
+                len(word):
             punctuation = ""
-            
-            if word[-1] not in LETTERS: # if the word ends in a punctuation mark
+
+            # if the word ends in a punctuation mark
+            if word[-1] not in LETTERS:
                 punctuation = word[-1]
                 word = word[:-1]
             word = lemmatizer.lemmatize(word)
             new_sent += word + punctuation + " "
-            
+
     return new_sent
 
 
