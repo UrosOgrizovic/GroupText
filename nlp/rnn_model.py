@@ -36,7 +36,7 @@ def create_model(word_index_len, embedding_matrix, embedding_dim,
     #                             activation='relu')))
     # model.add(MaxPooling1D())
 
-    # no need for bias before BN, because BN normalizes to mean 0 and std var
+    # no need for bias before BN, because BN normalizes to mean=0 and var=1
     model.add(Dense(32, kernel_regularizer=l2(1e-4), use_bias=False))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
