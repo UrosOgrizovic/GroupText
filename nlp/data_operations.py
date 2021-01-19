@@ -4,17 +4,17 @@ from text_preprocessing import parse_sentence
 SEGMENT_DELIMITER = "========"
 
 
-def plot_training_and_validation_data(train_acc, val_acc, train_loss,
-                                      val_loss, num_rows):
+def plot_training_and_validation_data(history, num_docs):
     """
     plots training and validation curves
-    :param train_acc:
-    :param val_acc:
-    :param train_loss:
-    :param val_loss:
-    :param num_rows:
+    :param history:
+    :param num_docs:
     :return:
     """
+    train_acc = history.history['accuracy']
+    val_acc = history.history['val_accuracy']
+    train_loss = history.history['loss']
+    val_loss = history.history['val_loss']
     epochs = range(1, len(train_acc) + 1)
 
     # Train and validation accuracy
@@ -23,7 +23,7 @@ def plot_training_and_validation_data(train_acc, val_acc, train_loss,
     plt.xlabel('Epochs')
     plt.title('Training and Validation accurarcy')
     plt.legend()
-    plt.savefig('vanilla_cnn_'+num_rows+'_train_val_acc', bbox_inches='tight')
+    plt.savefig('learning_curves/model_'+num_docs+'_train_val_acc.png', bbox_inches='tight')
 
     plt.figure()
     # Train and validation loss
@@ -32,9 +32,9 @@ def plot_training_and_validation_data(train_acc, val_acc, train_loss,
     plt.xlabel('Epochs')
     plt.title('Training and Validation loss')
     plt.legend()
-    plt.savefig('vanilla_cnn_'+num_rows+'_train_val_loss', bbox_inches='tight')
+    plt.savefig('learning_curves/model_'+num_docs+'_train_val_loss.png', bbox_inches='tight')
 
-    plt.show()
+    # plt.show()
 
 
 def read_docs(path, num_docs=100):
