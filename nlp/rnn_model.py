@@ -7,15 +7,17 @@ from keras.layers import Dense, GRU, Bidirectional, Embedding,\
 from keras.preprocessing.sequence import pad_sequences
 import tensorflow as tf
 from helpers import find_lengths_in_batch
-# from keras.regularizers import l2
+from keras.regularizers import l2
 import numpy as np
+from keras.callbacks import LearningRateScheduler
+from keras.callbacks.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 tf.random.set_seed(3)  # Tensorflow
 gpus = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(gpus[0], True)
 
 my_init = initializers.glorot_uniform(seed=1)
-dropout_amount = 0.2
+dropout_amount = 0.1
 
 
 def add_bidirectional(model):
@@ -23,16 +25,13 @@ def add_bidirectional(model):
                             kernel_initializer=my_init)))
     model.add(BatchNormalization())     # add BN before non-linearity
     model.add(Activation('relu'))
-    # model.add(Dropout(dropout_amount))     # mask the outputs
     return model
 
 
 def add_dense(model):
-    # no need for bias before BN, because BN normalizes to mean=0 and var=1
-    model.add(Dense(32, use_bias=False, kernel_initializer=my_init))
+    model.add(Dense(32, kernel_initializer=my_init))
     model.add(BatchNormalization())
     model.add(Activation('relu'))
-    model.add(Dropout(dropout_amount))
     return model
 
 
@@ -97,7 +96,16 @@ def custom_generator(x, y, batch_size):
             counter = 0
 
 
-def train_model_generator(x, y, batch_size, model, num_epochs):
+def lr_decay(epoch):
+    if epoch < 10:
+        return 0.001
+    elif epoch < 20:
+        return 0.0005
+    else:
+        return 0.0001
+
+
+def train_model_generator(x, y, batch_size, model, num_epochs, save_model_path):
     length = int(0.8*len(x))
     x_tr = x[:length]
     y_tr = y[:length]
@@ -110,7 +118,15 @@ def train_model_generator(x, y, batch_size, model, num_epochs):
     # x_tr = pad_sequences(x_tr, 22, padding='post', truncating='post')
     # print(x_tr[0], type(x_tr[0]))
     # exit()
+    early_stopping = EarlyStopping(monitor='val_loss', patience=7, verbose=1, mode='min',
+                                   min_delta=0.1)
+    mcp_save = ModelCheckpoint(save_model_path, save_best_only=True, monitor='val_loss',
+                               mode='min')
+    reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3,
+                                       verbose=1, min_delta=0.05, mode='min')
     return model.fit_generator(custom_generator(x_tr, y_tr, batch_size), epochs=num_epochs,
                                steps_per_epoch = len(x_tr)//batch_size,
                                validation_data = custom_generator(x_val, y_val, batch_size*2),
-                               validation_steps = len(x_val)//(batch_size*2))
+                               validation_steps = len(x_val)//(batch_size*2),
+                            #    callbacks=[LearningRateScheduler(lr_decay, verbose=1)])
+                               callbacks=[early_stopping, mcp_save, reduce_lr_loss])

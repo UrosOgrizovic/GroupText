@@ -45,7 +45,8 @@ def train_model(
         embedding_matrix, embedding_dim, num_sen_per_doc, sen_len)
     print("Finished creating model")
     print(model.summary())
-    history = rnn_model.train_model_generator(x_tr, y_tr, batch_size, model, num_epochs)
+    history = rnn_model.train_model_generator(x_tr, y_tr, batch_size, model, num_epochs,
+                                              save_model_path)
     data_operations.plot_training_and_validation_data(history,
                                                       helpers.abbreviate_num_to_str(num_docs))
     model.save(save_model_path)
@@ -74,7 +75,6 @@ def evaluate_model(text, tokenizer, sen_pad_len,
     predictions = model.predict(seq_text)[0]
     # not interested in the predictions for the padded elements
     predictions = predictions[-len_before_padding:]
-    print(predictions)
     for i in range(len(predictions)):
         print(f"{predictions[i][0]}: {text_str[i]:50}")
 
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     sen_len = len(x_tr[0][0])
 
     batch_size = 32
-    num_epochs = 15
+    num_epochs = 30
     validation_split = 0.2
     # y_tr = y_tr.reshape(num_docs_tr, num_sen_per_doc, 1)
     # y_tst = y_tst.reshape(num_docs_tst, num_sen_per_doc, 1)
