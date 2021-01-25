@@ -11,6 +11,8 @@ from keras.regularizers import l2
 import numpy as np
 from keras.callbacks import LearningRateScheduler
 from keras.callbacks.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+import data_operations
+import helpers
 
 tf.random.set_seed(3)  # Tensorflow
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -47,8 +49,7 @@ def custom_loss(y_true, y_pred):
     return loss
 
 
-def create_model(word_index_len, embedding_matrix, embedding_dim,
-                 num_sen_per_doc, sen_len):
+def create_model(word_index_len, embedding_matrix, embedding_dim, sen_len=20):
     model = Sequential()
     embedding_layer = Embedding(input_dim=word_index_len + 1,
                                 output_dim=embedding_dim,
@@ -75,25 +76,23 @@ def create_model(word_index_len, embedding_matrix, embedding_dim,
     return model
 
 
-def custom_generator(x, y, batch_size):
-    samples_per_epoch = len(x)
-    number_of_batches = samples_per_epoch/batch_size
+def custom_generator(num_docs, num_batches, batch_size, set='tr'):
+    path = helpers.get_path(num_docs, set)
     counter = 0
+    curr_pos = 0
     while True:
-        x_batch = x[batch_size*counter:batch_size*(counter+1)]
-        y_batch = y[batch_size*counter:batch_size*(counter+1)]
+        x_batch, y_batch, curr_pos = data_operations.read_docs_in_bathces(path, batch_size, curr_pos)
         avg_doc_len, _ = find_lengths_in_batch(x_batch)
         x_batch = pad_sequences(x_batch, avg_doc_len, padding='post', truncating='post')
         y_batch = pad_sequences(y_batch, avg_doc_len, padding='post', truncating='post')
 
-        # print(y_batch.shape)
-        # print("gotovo pedovanje")
         counter += 1
         yield x_batch, np.reshape(y_batch, (y_batch.shape[0], y_batch.shape[1], 1))
 
         # restart counter to yield data in the next epoch as well
-        if counter >= number_of_batches:
+        if counter >= num_batches:
             counter = 0
+            curr_pos = 0
 
 
 def lr_decay(epoch):
@@ -105,28 +104,22 @@ def lr_decay(epoch):
         return 0.0001
 
 
-def train_model_generator(x, y, batch_size, model, num_epochs, save_model_path):
-    length = int(0.8*len(x))
-    x_tr = x[:length]
-    y_tr = y[:length]
-    x_val = x[length:]
-    y_val = y[length:]
-    # print(len(x_tr), y_tr.shape, y_tr[0].shape)
-    # print(y_tr)
-    # exit()
-    # print(x_tr[0], type(x_tr[0]))
-    # x_tr = pad_sequences(x_tr, 22, padding='post', truncating='post')
-    # print(x_tr[0], type(x_tr[0]))
-    # exit()
+def train_model_generator(batch_size, model, num_epochs, save_model_path, num_docs):
+
     early_stopping = EarlyStopping(monitor='val_loss', patience=7, verbose=1, mode='min',
                                    min_delta=0.1)
     mcp_save = ModelCheckpoint(save_model_path, save_best_only=True, monitor='val_loss',
                                mode='min')
-    reduce_lr_loss = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3,
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3,
                                        verbose=1, min_delta=0.05, mode='min')
-    return model.fit_generator(custom_generator(x_tr, y_tr, batch_size), epochs=num_epochs,
-                               steps_per_epoch = len(x_tr)//batch_size,
-                               validation_data = custom_generator(x_val, y_val, batch_size*2),
-                               validation_steps = len(x_val)//(batch_size*2),
+    # first 0.8 for tr/tst split, second 0.8 for tr/val split
+    len_tr = num_docs * 0.8 * 0.8
+    len_val = num_docs * 0.8 * 0.2
+    num_batches_tr = len_tr//batch_size
+    num_batches_val = len_val//(batch_size*2)
+    return model.fit_generator(custom_generator(num_docs, num_batches_tr, batch_size), epochs=num_epochs,
+                               steps_per_epoch = num_batches_tr,
+                               validation_data = custom_generator(num_docs, num_batches_val, batch_size*2, 'val'),
+                               validation_steps = num_batches_val,
                             #    callbacks=[LearningRateScheduler(lr_decay, verbose=1)])
-                               callbacks=[early_stopping, mcp_save, reduce_lr_loss])
+                               callbacks=[early_stopping, mcp_save, reduce_lr])

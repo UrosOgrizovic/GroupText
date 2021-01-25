@@ -136,5 +136,7 @@ grouptext/
 nlp/extracted/
 nlp/glove/
 nlp/saved_models/
+nlp/data/
 gtvenv/
 .vscode/
+*.pkl
