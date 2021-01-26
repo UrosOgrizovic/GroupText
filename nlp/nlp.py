@@ -12,6 +12,7 @@ import data_operations
 import helpers
 import pickle
 # import re
+from sys import getsizeof
 
 np.random.seed(3)
 SEGMENT_DELIMITER = "========"
@@ -70,14 +71,17 @@ if __name__ == "__main__":
     read_docs_path = "extracted/wiki_727K"
     # y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len = \
     #     data_operations.read_docs(read_docs_path, num_docs)
-    list_of_all_words = []
+    list_of_all_words = data_operations.load_from_path("list_of_all_words_100k.pkl")
 
-    tokenizer_path = f'tokenizer_{num_in_path}.pkl'
+    # tokenizer_path = f'tokenizer_{num_in_path}.pkl'
+    tokenizer_path = f'tokenizer_1k.pkl'
     tokenizer = data_operations.get_tokenizer(tokenizer_path, list_of_all_words)
 
     embedding_dim = 300
     embedding_matrix_path = f'embedding_matrix_{helpers.abbreviate_num_to_str(num_docs)}.pkl'
     embedding_matrix = data_operations.get_embedding_matrix(embedding_matrix_path, tokenizer, embedding_dim)
+    print(f'Tokenizer size {getsizeof(tokenizer)}')
+    print(f'Embedding matrix size {getsizeof(embedding_matrix)}')
     # print(embedding_matrix.shape)
     # exit()
     # x_tr, y_tr, x_val, y_val, x_tst, y_tst = data_operations.process_loaded_docs(y_tr, y_tst,

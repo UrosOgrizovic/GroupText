@@ -126,8 +126,11 @@ def dump_to_path(object, path):
 
 
 def load_from_path(path):
-    with open(path, 'rb') as input:
-        object = pickle.load(input)
+    try:
+        with open(path, 'rb') as input:
+            object = pickle.load(input)
+    except:
+        object = None
     return object
 
 
@@ -153,9 +156,8 @@ def load_x_y(path):
 
 
 def get_tokenizer(path, list_of_all_words):
-    try:
-        tokenizer = load_from_path(path)
-    except:
+    tokenizer = load_from_path(path)
+    if tokenizer is None:
         # convert strings to numbers
         tokenizer = Tokenizer()
         print("Fitting tokenizer...")
@@ -166,12 +168,11 @@ def get_tokenizer(path, list_of_all_words):
 
 
 def get_embedding_matrix(path, tokenizer, embedding_dim):
-    try:
-        embedding_matrix = load_from_path(path)
-    except:
-        embedding_matrix = helpers.calculate_embedding_matrix(
-            tokenizer.word_index, embedding_dim)
-        dump_to_path(embedding_matrix, path)
+    # embedding_matrix = load_from_path(path)
+    # if embedding_matrix is None:
+    embedding_matrix = helpers.calculate_embedding_matrix(
+        tokenizer.word_index, embedding_dim)
+        # dump_to_path(embedding_matrix, path)  # too large to dump in Python 3.6.1
     return embedding_matrix
 
 
