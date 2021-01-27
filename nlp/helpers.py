@@ -13,7 +13,7 @@ def abbreviate_num_to_str(num):
     return f'{num}k'
 
 
-def find_lengths_in_batch(x):
+def find_avg_doc_length_in_batch(x):
     """Find average document and sentence
     length in batch.
 
@@ -29,12 +29,8 @@ def find_lengths_in_batch(x):
     num_sents = 0
     for doc in x:
         avg_doc_len += len(doc)
-        for sen in doc:
-            avg_sen_len += len(sen)
-            num_sents += 1
     avg_doc_len /= len(x)
-    avg_sen_len /= num_sents
-    return round(avg_doc_len), round(avg_sen_len)
+    return round(avg_doc_len)
 
 
 def get_percentage_of_segment_starting_sentences(y, doc_pad_len):

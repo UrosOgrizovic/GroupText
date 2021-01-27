@@ -103,10 +103,11 @@ def read_docs(path, num_docs=100):
             sentence_lengths.append(len(line.split(" ")))
     print("Finished loading documents")
     avg_sen_len = round(sum(sentence_lengths) / len(sentence_lengths))
+    dump_to_path(list_of_all_words, f'list_of_all_words_{helpers.abbreviate_num_to_str(num_docs)}.pkl')
     return y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len
 
 
-def read_docs_in_bathces(path, batch_size, curr_pos=0):
+def read_docs_in_batches(path, batch_size, curr_pos=0):
     x, y = [], []
     batch_idx = 0
     with open(path, 'rb') as f:
@@ -165,15 +166,6 @@ def get_tokenizer(path, list_of_all_words):
         print("Finished fitting tokenizer")
         dump_to_path(tokenizer, path)
     return tokenizer
-
-
-def get_embedding_matrix(path, tokenizer, embedding_dim):
-    # embedding_matrix = load_from_path(path)
-    # if embedding_matrix is None:
-    embedding_matrix = helpers.calculate_embedding_matrix(
-        tokenizer.word_index, embedding_dim)
-        # dump_to_path(embedding_matrix, path)  # too large to dump in Python 3.6.1
-    return embedding_matrix
 
 
 def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len,
@@ -294,7 +286,8 @@ if __name__ == '__main__':
     #     avg_sen_len = read_docs("extracted/wiki_727K", num_docs)
     # tokenizer = get_tokenizer(f"tokenizer_{num_in_path}.pkl", list_of_all_words)
     # embedding_dim = 100
-    # embedding_matrix = get_embedding_matrix(f"embedding_matrix_{num_in_path}.pkl", tokenizer, embedding_dim)
+    # embedding_matrix = helpers.calculate_embedding_matrix(
+    #    tokenizer.word_index, embedding_dim)
     # process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len,
     #                     tokenizer, num_in_path)
     x, y = load_x_y(f'data/dump_tr_{num_in_path}.pkl')

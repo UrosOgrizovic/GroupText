@@ -6,7 +6,7 @@ from keras.layers import Dense, GRU, Bidirectional, Embedding,\
     Reshape, Lambda, Dropout, BatchNormalization, Activation
 from keras.preprocessing.sequence import pad_sequences
 import tensorflow as tf
-from helpers import find_lengths_in_batch
+import helpers
 from keras.regularizers import l2
 import numpy as np
 from keras.callbacks import LearningRateScheduler
@@ -39,8 +39,6 @@ def add_dense(model):
 
 @tf.function()
 def custom_loss(y_true, y_pred):
-    # print(y_true.shape, y_true)
-    # print(y_pred.shape, y_pred)
     # "A coefficient to use on the positive examples."
     pos_weight = 5.0 / 1.0
     loss = tf.reduce_mean(tf.nn.weighted_cross_entropy_with_logits(y_true,
@@ -81,8 +79,8 @@ def custom_generator(num_docs, num_batches, batch_size, set='tr'):
     counter = 0
     curr_pos = 0
     while True:
-        x_batch, y_batch, curr_pos = data_operations.read_docs_in_bathces(path, batch_size, curr_pos)
-        avg_doc_len, _ = find_lengths_in_batch(x_batch)
+        x_batch, y_batch, curr_pos = data_operations.read_docs_in_batches(path, batch_size, curr_pos)
+        avg_doc_len = helpers.find_avg_doc_length_in_batch(x_batch)
         x_batch = pad_sequences(x_batch, avg_doc_len, padding='post', truncating='post')
         y_batch = pad_sequences(y_batch, avg_doc_len, padding='post', truncating='post')
 
@@ -115,8 +113,9 @@ def train_model_generator(batch_size, model, num_epochs, save_model_path, num_do
     # first 0.8 for tr/tst split, second 0.8 for tr/val split
     len_tr = num_docs * 0.8 * 0.8
     len_val = num_docs * 0.8 * 0.2
-    num_batches_tr = len_tr//batch_size
-    num_batches_val = len_val//(batch_size*2)
+    num_batches_tr = int(len_tr//batch_size)
+    num_batches_val = int(len_val//(batch_size*2))
+
     return model.fit_generator(custom_generator(num_docs, num_batches_tr, batch_size), epochs=num_epochs,
                                steps_per_epoch = num_batches_tr,
                                validation_data = custom_generator(num_docs, num_batches_val, batch_size*2, 'val'),
