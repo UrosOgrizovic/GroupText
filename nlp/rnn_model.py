@@ -1,11 +1,11 @@
-
+import tensorflow as tf
 from keras import Sequential
 from keras import initializers
 from keras.optimizers import Adam
 from keras.layers import Dense, GRU, Bidirectional, Embedding,\
     Reshape, Lambda, Dropout, BatchNormalization, Activation
+from keras_layer_normalization import LayerNormalization
 from keras.preprocessing.sequence import pad_sequences
-import tensorflow as tf
 import helpers
 from keras.regularizers import l2
 import numpy as np
@@ -25,14 +25,14 @@ dropout_amount = 0.1
 def add_bidirectional(model):
     model.add(Bidirectional(GRU(64, return_sequences=True,
                             kernel_initializer=my_init)))
-    model.add(BatchNormalization())     # add BN before non-linearity
+    model.add(LayerNormalization())     # add BN before non-linearity
     model.add(Activation('relu'))
     return model
 
 
 def add_dense(model):
     model.add(Dense(32, kernel_initializer=my_init))
-    model.add(BatchNormalization())
+    model.add(LayerNormalization())
     model.add(Activation('relu'))
     return model
 
@@ -49,22 +49,29 @@ def custom_loss(y_true, y_pred):
 
 def create_model(word_index_len, embedding_matrix, embedding_dim, sen_len=20):
     model = Sequential()
-    embedding_layer = Embedding(input_dim=word_index_len + 1,
-                                output_dim=embedding_dim,
-                                mask_zero=True,
-                                input_shape=(None, sen_len),
-                                trainable=True, weights=[embedding_matrix])
-    model.add(embedding_layer)
-    model.add(Lambda(lambda x: x, output_shape=lambda s: s))
+    # embedding_layer = Embedding(input_dim=word_index_len + 1,
+    #                             output_dim=embedding_dim,
+    #                             mask_zero=True,
+    #                             input_shape=(None, sen_len),
+    #                             # trainable=True, weights=[embedding_matrix])
+    #                             trainable=True)
+    # model.add(embedding_layer)
+    # model.add(Lambda(lambda x: x, output_shape=lambda s: s))
 
-    # -1 stands for shape inference
-    model.add(Reshape((-1, sen_len * embedding_dim)))
+    # # -1 stands for shape inference
+    # model.add(Reshape((-1, sen_len * embedding_dim)))
+
+    model.add(Bidirectional(GRU(64, return_sequences=True,
+                            kernel_initializer=my_init),
+                            input_shape=(None, sen_len)))
+    model.add(LayerNormalization())     # add BN before non-linearity
+    model.add(Activation('relu'))
 
     model = add_bidirectional(model)
     model = add_bidirectional(model)
     model = add_bidirectional(model)
 
-    model = add_dense(model)
+    # model = add_dense(model)
 
     # output probability that current sentence starts a new segment
     model.add(Dense(1, activation="sigmoid"))

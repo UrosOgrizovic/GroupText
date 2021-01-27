@@ -3,7 +3,6 @@ from text_preprocessing import parse_sentence
 import pickle
 import helpers
 from keras.preprocessing.text import Tokenizer
-import gc
 import numpy as np
 from keras.preprocessing.sequence import pad_sequences
 
@@ -156,14 +155,16 @@ def load_x_y(path):
     return np.array(x), np.array(y)
 
 
-def get_tokenizer(path, list_of_all_words):
+def get_tokenizer(path, list_of_all_words, num_words_to_keep):
     tokenizer = load_from_path(path)
     if tokenizer is None:
         # convert strings to numbers
+        # tokenizer = Tokenizer(num_words=num_words_to_keep)
         tokenizer = Tokenizer()
         print("Fitting tokenizer...")
         tokenizer.fit_on_texts(list_of_all_words)
         print("Finished fitting tokenizer")
+        print(f'Tokenizer word index len: {len(tokenizer.word_index)}')
         dump_to_path(tokenizer, path)
     return tokenizer
 
@@ -183,7 +184,6 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
     """
     sequences = tokenizer.texts_to_sequences(list_of_all_words)
     del list_of_all_words
-    gc.collect()
 
     sen_pad_len = avg_sen_len + 5
 
@@ -195,7 +195,6 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
     x_tr, x_tst = sequences[:len(y_tr)], sequences[len(y_tr):]
 
     del sequences
-    gc.collect()
 
     # group training data as documents
     documents_x_tr, documents_y_tr = [], []
@@ -227,7 +226,7 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
             curr_doc_y.append(y_tst[i])
 
     del sentence_document_mapping
-    gc.collect()
+
 
     documents_x_tr[-1].append(x_tr[-1])
     documents_x_tst[-1].append(x_tst[-1])
@@ -250,7 +249,6 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
     del documents_y_tst
     del curr_doc_x
     del curr_doc_y
-    gc.collect()
 
     cutoff_point = round(0.8*len(x_tr))
     x_val = x_tr[cutoff_point:]

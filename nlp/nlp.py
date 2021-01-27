@@ -4,7 +4,6 @@ from keras.preprocessing.text import Tokenizer
 import constants
 import numpy as np
 import os
-import gc
 # import random
 from text_preprocessing import split_text_into_sentences, parse_sentence
 from tensorflow.keras.models import load_model
@@ -23,11 +22,12 @@ def train_model(batch_size, num_epochs, validation_split,
         tokenizer, embedding_matrix, embedding_dim,
         num_docs):
     print("Creating model...")
-    model = rnn_model.create_model(
-        len(tokenizer.word_index),
-        embedding_matrix, embedding_dim)
+    # model = rnn_model.create_model(
+    #     len(tokenizer.word_index),
+    #     embedding_matrix, embedding_dim)
+    model = rnn_model.create_model(None, None, 1)
     print("Finished creating model")
-    print(model.summary())
+    # print(model.summary())
     # history = rnn_model.train_model_generator(x_tr, y_tr, x_val, y_val, batch_size, model, num_epochs,
                                             #   save_model_path, num_docs)
     history = rnn_model.train_model_generator(batch_size, model, num_epochs,
@@ -65,22 +65,26 @@ def evaluate_model(text, tokenizer, sen_pad_len,
 
 
 if __name__ == "__main__":
-    num_docs = 100000
+    num_docs = 300000
     num_in_path = helpers.abbreviate_num_to_str(num_docs)
     save_model_path = "saved_models/model" + str(num_docs) + ".h5"
     read_docs_path = "extracted/wiki_727K"
-    # y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len = \
-    #     data_operations.read_docs(read_docs_path, num_docs)
+    y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len = \
+        data_operations.read_docs(read_docs_path, num_docs)
+    exit()
     list_of_all_words = data_operations.load_from_path(f'list_of_all_words_{num_in_path}.pkl')
     # list_of_all_words = data_operations.load_from_path(f'list_of_all_words_10k.pkl')
 
     # tokenizer_path = f'tokenizer_{num_in_path}.pkl'
-    tokenizer_path = f'tokenizer_1k.pkl'
-    tokenizer = data_operations.get_tokenizer(tokenizer_path, list_of_all_words)
+    tokenizer_path = f'tokenizer_100k.pkl'
+    num_words_to_keep = 1000
+    # tokenizer = data_operations.get_tokenizer(tokenizer_path, list_of_all_words, num_words_to_keep)
+    tokenizer = None
 
     embedding_dim = 100
-    embedding_matrix = helpers.calculate_embedding_matrix(
-        tokenizer.word_index, embedding_dim)
+    # embedding_matrix = helpers.calculate_embedding_matrix(
+    #     tokenizer.word_index, embedding_dim)
+    embedding_matrix = None
     print(f'Tokenizer size: {getsizeof(tokenizer)} bytes')
     print(f'Embedding matrix size: {getsizeof(embedding_matrix) / 1000000} MB')
 
