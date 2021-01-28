@@ -15,7 +15,7 @@ from sys import getsizeof
 
 np.random.seed(3)
 SEGMENT_DELIMITER = "========"
-
+AVG_SEN_LEN = 20
 
 def train_model(batch_size, num_epochs, validation_split,
         save_model_path,
@@ -65,36 +65,43 @@ def evaluate_model(text, tokenizer, sen_pad_len,
 
 
 if __name__ == "__main__":
-    num_docs = 300000
+    num_docs = 5000
     num_in_path = helpers.abbreviate_num_to_str(num_docs)
     save_model_path = "saved_models/model" + str(num_docs) + ".h5"
     read_docs_path = "extracted/wiki_727K"
-    y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len = \
-        data_operations.read_docs(read_docs_path, num_docs)
+    num_words_to_keep = 1000
+    tokenizer = Tokenizer()
+    embedding_matrix, embedding_dim = None, 100
+    batch_size, num_epochs, validation_split, test_split = 32, 30, 0.2, 0.8
+    sentence_document_mapping = {}  # sentence_index: document_index
+    document_index, sentence_index = -1, 0
+    y_tr, y_tst = [], []
+    list_of_all_words = []
+    curr_pos = 0
+    for n_d in range(1000, num_docs+1, 1000):
+        y_tr, y_tst, list_of_all_words, sentence_document_mapping, curr_pos,\
+        sentence_index, document_index = \
+            data_operations.read_docs_in_batches(read_docs_path, 1000, curr_pos, num_in_path,
+            sentence_document_mapping, list_of_all_words, test_split, y_tr, y_tst, sentence_index,
+            document_index)
+    # exit()
+    # list_of_all_words = data_operations.load_from_path(f'list_of_all_words_{num_in_path}.pkl')
+    x_tr, y_tr, x_val, y_val, x_tst, y_tst = data_operations.process_loaded_docs(y_tr, y_tst,
+                                                                                list_of_all_words,
+                                                                                sentence_document_mapping,
+                                                                                AVG_SEN_LEN,
+                                                                                tokenizer, num_in_path)
     exit()
-    list_of_all_words = data_operations.load_from_path(f'list_of_all_words_{num_in_path}.pkl')
-    # list_of_all_words = data_operations.load_from_path(f'list_of_all_words_10k.pkl')
 
     # tokenizer_path = f'tokenizer_{num_in_path}.pkl'
     tokenizer_path = f'tokenizer_100k.pkl'
-    num_words_to_keep = 1000
     # tokenizer = data_operations.get_tokenizer(tokenizer_path, list_of_all_words, num_words_to_keep)
-    tokenizer = None
 
-    embedding_dim = 100
     # embedding_matrix = helpers.calculate_embedding_matrix(
     #     tokenizer.word_index, embedding_dim)
-    embedding_matrix = None
     print(f'Tokenizer size: {getsizeof(tokenizer)} bytes')
     print(f'Embedding matrix size: {getsizeof(embedding_matrix) / 1000000} MB')
 
-    # print(embedding_matrix.shape)
-    # exit()
-    # x_tr, y_tr, x_val, y_val, x_tst, y_tst = data_operations.process_loaded_docs(y_tr, y_tst,
-    #                                                                             list_of_all_words,
-    #                                                                             sentence_document_mapping,
-    #                                                                             avg_sen_len,
-    #                                                                             tokenizer, num_in_path)
 
     # num_docs_tr = x_tr.shape[0]
     # num_docs_tst = x_tst.shape[0]
@@ -102,9 +109,7 @@ if __name__ == "__main__":
     # num_sen_per_doc = 0
     # sen_len = len(x_tr[0][0])
 
-    batch_size = 32
-    num_epochs = 30
-    validation_split = 0.2
+
     # y_tr = y_tr.reshape(num_docs_tr, num_sen_per_doc, 1)
     # y_tst = y_tst.reshape(num_docs_tst, num_sen_per_doc, 1)
     # y_tst = np.expand_dims(y_tst, axis=2)

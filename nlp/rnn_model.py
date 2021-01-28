@@ -4,7 +4,6 @@ from keras import initializers
 from keras.optimizers import Adam
 from keras.layers import Dense, GRU, Bidirectional, Embedding,\
     Reshape, Lambda, Dropout, BatchNormalization, Activation
-from keras_layer_normalization import LayerNormalization
 from keras.preprocessing.sequence import pad_sequences
 import helpers
 from keras.regularizers import l2
@@ -25,14 +24,14 @@ dropout_amount = 0.1
 def add_bidirectional(model):
     model.add(Bidirectional(GRU(64, return_sequences=True,
                             kernel_initializer=my_init)))
-    model.add(LayerNormalization())     # add BN before non-linearity
+    model.add(BatchNormalization())     # add BN before non-linearity
     model.add(Activation('relu'))
     return model
 
 
 def add_dense(model):
     model.add(Dense(32, kernel_initializer=my_init))
-    model.add(LayerNormalization())
+    model.add(BatchNormalization())
     model.add(Activation('relu'))
     return model
 
@@ -64,7 +63,7 @@ def create_model(word_index_len, embedding_matrix, embedding_dim, sen_len=20):
     model.add(Bidirectional(GRU(64, return_sequences=True,
                             kernel_initializer=my_init),
                             input_shape=(None, sen_len)))
-    model.add(LayerNormalization())     # add BN before non-linearity
+    model.add(BatchNormalization())     # add BN before non-linearity
     model.add(Activation('relu'))
 
     model = add_bidirectional(model)
@@ -86,7 +85,7 @@ def custom_generator(num_docs, num_batches, batch_size, set='tr'):
     counter = 0
     curr_pos = 0
     while True:
-        x_batch, y_batch, curr_pos = data_operations.read_docs_in_batches(path, batch_size, curr_pos)
+        x_batch, y_batch, curr_pos = data_operations.read_dumps_in_batches(path, batch_size, curr_pos)
         avg_doc_len = helpers.find_avg_doc_length_in_batch(x_batch)
         x_batch = pad_sequences(x_batch, avg_doc_len, padding='post', truncating='post')
         y_batch = pad_sequences(y_batch, avg_doc_len, padding='post', truncating='post')

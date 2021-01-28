@@ -40,18 +40,17 @@ def plot_training_and_validation_data(history, num_docs):
     plt.savefig('learning_curves/model_'+num_docs+'_train_val_loss.png', bbox_inches='tight')
 
 
-def read_docs(path, num_docs=100):
+def read_docs_in_batches(path, batch_size, curr_pos, num_in_path, sentence_document_mapping,
+                        list_of_all_words, test_split, y_tr, y_tst, sentence_index, document_index):
     current_paragraph_x = []
-    list_of_all_words = []
-    sentence_document_mapping = {}  # sentence_index: document_index
-    y_tr, y_tst = [], []
     starts_new_segment = False
-    sentence_lengths = []
-    document_index, sentence_index = -1, 0
-    print(f"Loading {num_docs} documents...")
+    print(f"Loading {batch_size} documents...")
+    print(f'Curr pos {curr_pos}')
     with open(path, "rt", encoding="utf-8") as myfile:
-        while document_index < num_docs:
-            line = next(myfile)[:-2]
+        myfile.seek(curr_pos, 0)     # move to where reading was stopped last time
+        while document_index < batch_size:
+            # line = next(myfile)[:-2]
+            line = myfile.readline()[:-2]
             # new document, increase document_index
             if "1,preface" in line:
                 document_index += 1
@@ -68,7 +67,7 @@ def read_docs(path, num_docs=100):
                     and line.startswith(SEGMENT_DELIMITER):
                 continue
             line = parse_sentence(line)
-            if document_index > 0.8 * num_docs:
+            if document_index > test_split * batch_size:
                 # denotes new segment title
                 if line.startswith(SEGMENT_DELIMITER):
                     current_paragraph_x = []
@@ -99,29 +98,35 @@ def read_docs(path, num_docs=100):
             list_of_all_words.append(line.split(" "))
             sentence_document_mapping[sentence_index] = document_index
             sentence_index += 1
-            sentence_lengths.append(len(line.split(" ")))
+        curr_pos = myfile.tell()    # get position after reading
     print("Finished loading documents")
-    avg_sen_len = round(sum(sentence_lengths) / len(sentence_lengths))
-    dump_to_path(list_of_all_words, f'list_of_all_words_{helpers.abbreviate_num_to_str(num_docs)}.pkl')
-    return y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len
+    # dump_to_path(list_of_all_words, f'list_of_all_words_{num_in_path}.pkl', 'ab')
+    return y_tr, y_tst, list_of_all_words, sentence_document_mapping, curr_pos, sentence_index, document_index
 
 
-def read_docs_in_batches(path, batch_size, curr_pos=0):
+def read_dumps_in_batches(path, batch_size, curr_pos):
     x, y = [], []
     batch_idx = 0
     with open(path, 'rb') as f:
-        f.seek(curr_pos, 0) # move to where reading was stopped last time
+        f.seek(curr_pos, 0)     # move to where reading was stopped last time
         unpickler = pickle.Unpickler(f)
         while batch_idx < batch_size:
             x.append(unpickler.load())
             y.append(unpickler.load())
             batch_idx += 1
-        curr_pos = f.tell()
+        curr_pos = f.tell()     # get position after reading
     return x, y, curr_pos
 
 
-def dump_to_path(object, path):
-    with open(path, 'wb') as output:
+def dump_to_path(object, path, mode='wb'):
+    """Dump object to file via pickle
+
+    Args:
+        object ([type]): [description]
+        path ([type]): [description]
+        mode (str, optional): write or append ('wb' or 'ab'). Defaults to 'wb'.
+    """
+    with open(path, mode) as output:
         pickle.dump(object, output, pickle.HIGHEST_PROTOCOL)
 
 
@@ -169,7 +174,7 @@ def get_tokenizer(path, list_of_all_words, num_words_to_keep):
     return tokenizer
 
 
-def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len,
+def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mapping, sen_pad_len,
                         tokenizer, num_in_path):
     """Processes loaded data and dumps it via pickle.
 
@@ -178,14 +183,12 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
         y_tst (list): [description]
         list_of_all_words (list): [description]
         sentence_document_mapping (dict): [description]
-        avg_sen_len (int): [description]
+        sen_pad_len (int): [description]
         tokenizer (keras.preprocessing.text.Tokenizer)
         num_in_path (str): e.g. '1k', '10k', '100k'
     """
     sequences = tokenizer.texts_to_sequences(list_of_all_words)
     del list_of_all_words
-
-    sen_pad_len = avg_sen_len + 5
 
     # perform sentence-level padding/truncating (truncate ends of sentences,
     # because beginnings are more important for this task)
@@ -193,6 +196,10 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
                               truncating='post')
     # 80/20 train-test split
     x_tr, x_tst = sequences[:len(y_tr)], sequences[len(y_tr):]
+
+    print(len(x_tr), len(y_tr))
+    print(len(x_tst), len(y_tst))
+
 
     del sequences
 
@@ -280,14 +287,6 @@ if __name__ == '__main__':
     num_docs = 1000
     num_in_path = helpers.abbreviate_num_to_str(num_docs)
 
-    # y_tr, y_tst, list_of_all_words, sentence_document_mapping, \
-    #     avg_sen_len = read_docs("extracted/wiki_727K", num_docs)
-    # tokenizer = get_tokenizer(f"tokenizer_{num_in_path}.pkl", list_of_all_words)
-    # embedding_dim = 100
-    # embedding_matrix = helpers.calculate_embedding_matrix(
-    #    tokenizer.word_index, embedding_dim)
-    # process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mapping, avg_sen_len,
-    #                     tokenizer, num_in_path)
     x, y = load_x_y(f'data/dump_tr_{num_in_path}.pkl')
     print(x[1])
     print(y[1])
