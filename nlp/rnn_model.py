@@ -22,7 +22,7 @@ dropout_amount = 0.1
 
 
 def add_bidirectional(model):
-    model.add(Bidirectional(GRU(64, return_sequences=True,
+    model.add(Bidirectional(GRU(128, return_sequences=True,
                             kernel_initializer=my_init)))
     model.add(BatchNormalization())     # add BN before non-linearity
     model.add(Activation('relu'))
@@ -60,7 +60,7 @@ def create_model(word_index_len, embedding_matrix, embedding_dim, sen_len=20):
     # # -1 stands for shape inference
     # model.add(Reshape((-1, sen_len * embedding_dim)))
 
-    model.add(Bidirectional(GRU(64, return_sequences=True,
+    model.add(Bidirectional(GRU(128, return_sequences=True,
                             kernel_initializer=my_init),
                             input_shape=(None, sen_len)))
     model.add(BatchNormalization())     # add BN before non-linearity
@@ -75,7 +75,7 @@ def create_model(word_index_len, embedding_matrix, embedding_dim, sen_len=20):
     # output probability that current sentence starts a new segment
     model.add(Dense(1, activation="sigmoid"))
     model.compile(loss=custom_loss,
-                  optimizer=Adam(lr=1e-3),
+                  optimizer=Adam(lr=1e-6),
                   metrics=["accuracy"])
     return model
 

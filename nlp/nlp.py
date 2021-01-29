@@ -65,7 +65,7 @@ def evaluate_model(text, tokenizer, sen_pad_len,
 
 
 if __name__ == "__main__":
-    num_docs = 5000
+    num_docs = 200000
     num_in_path = helpers.abbreviate_num_to_str(num_docs)
     save_model_path = "saved_models/model" + str(num_docs) + ".h5"
     read_docs_path = "extracted/wiki_727K"
@@ -74,24 +74,23 @@ if __name__ == "__main__":
     embedding_matrix, embedding_dim = None, 100
     batch_size, num_epochs, validation_split, test_split = 32, 30, 0.2, 0.8
     sentence_document_mapping = {}  # sentence_index: document_index
+    doc_batch_size = 10000
     document_index, sentence_index = -1, 0
     y_tr, y_tst = [], []
     list_of_all_words = []
     curr_pos = 0
-    for n_d in range(1000, num_docs+1, 1000):
-        y_tr, y_tst, list_of_all_words, sentence_document_mapping, curr_pos,\
-        sentence_index, document_index = \
-            data_operations.read_docs_in_batches(read_docs_path, 1000, curr_pos, num_in_path,
-            sentence_document_mapping, list_of_all_words, test_split, y_tr, y_tst, sentence_index,
-            document_index)
+    # for _ in range(doc_batch_size, num_docs+1, doc_batch_size):
+    #     y_tr, y_tst, list_of_all_words, sentence_document_mapping, curr_pos,\
+    #     sentence_index, document_index = \
+    #         data_operations.read_docs_in_batches(read_docs_path, doc_batch_size, curr_pos, num_in_path,
+    #         sentence_document_mapping, list_of_all_words, test_split, y_tr, y_tst, sentence_index,
+    #         document_index, num_docs)
+    # x_tr, y_tr, x_val, y_val, x_tst, y_tst = data_operations.process_loaded_docs(y_tr, y_tst,
+    #                                                                             list_of_all_words,
+    #                                                                             sentence_document_mapping,
+    #                                                                             AVG_SEN_LEN,
+    #                                                                             tokenizer, num_in_path)
     # exit()
-    # list_of_all_words = data_operations.load_from_path(f'list_of_all_words_{num_in_path}.pkl')
-    x_tr, y_tr, x_val, y_val, x_tst, y_tst = data_operations.process_loaded_docs(y_tr, y_tst,
-                                                                                list_of_all_words,
-                                                                                sentence_document_mapping,
-                                                                                AVG_SEN_LEN,
-                                                                                tokenizer, num_in_path)
-    exit()
 
     # tokenizer_path = f'tokenizer_{num_in_path}.pkl'
     tokenizer_path = f'tokenizer_100k.pkl'

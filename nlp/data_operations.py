@@ -41,60 +41,54 @@ def plot_training_and_validation_data(history, num_docs):
 
 
 def read_docs_in_batches(path, batch_size, curr_pos, num_in_path, sentence_document_mapping,
-                        list_of_all_words, test_split, y_tr, y_tst, sentence_index, document_index):
+                        list_of_all_words, test_split, y_tr, y_tst, sentence_index, document_index,
+                        num_docs_to_read):
     current_paragraph_x = []
     starts_new_segment = False
+    batch_index = 0
     print(f"Loading {batch_size} documents...")
     print(f'Curr pos {curr_pos}')
     with open(path, "rt", encoding="utf-8") as myfile:
         myfile.seek(curr_pos, 0)     # move to where reading was stopped last time
-        while document_index < batch_size:
+        while batch_index < batch_size:
             # line = next(myfile)[:-2]
             line = myfile.readline()[:-2]
             # new document, increase document_index
             if "1,preface" in line:
                 document_index += 1
+                batch_index += 1
                 starts_new_segment = True  # the next line starts a new segment
                 if current_paragraph_x:
                     current_paragraph_x = []
                 continue
             # skip these lines, I'm not sure if they are meaningful or metadata
-            if line.startswith("\x00") or line.startswith("wiki_") \
+            elif line.startswith("\x00") or line.startswith("wiki_") \
                     or line.startswith("***LIST"):
                 continue
             # start of subsection in section
-            if len(current_paragraph_x) == 0 \
+            elif len(current_paragraph_x) == 0 \
                     and line.startswith(SEGMENT_DELIMITER):
                 continue
             line = parse_sentence(line)
-            if document_index > test_split * batch_size:
-                # denotes new segment title
-                if line.startswith(SEGMENT_DELIMITER):
-                    current_paragraph_x = []
-                    # the next line starts a new segment
-                    starts_new_segment = True
-                    continue    # no need to add segment title to data
-                if starts_new_segment:
-                    current_paragraph_x.append(line)
+            # denotes new segment title
+            if line.startswith(SEGMENT_DELIMITER):
+                current_paragraph_x = []
+                # the next line starts a new segment
+                starts_new_segment = True
+                continue    # no need to add segment title to data
+            elif starts_new_segment:
+                current_paragraph_x.append(line)
+                starts_new_segment = False
+                if document_index > test_split * num_docs_to_read:
                     y_tst.append(1)
-                    starts_new_segment = False
                 else:
-                    y_tst.append(0)
-                    current_paragraph_x.append(line)
-            else:
-                # denotes new segment title
-                if line.startswith(SEGMENT_DELIMITER):
-                    current_paragraph_x = []
-                    # the next line starts a new segment
-                    starts_new_segment = True
-                    continue    # no need to add segment title to data
-                if starts_new_segment:
                     y_tr.append(1)
-                    current_paragraph_x.append(line)
-                    starts_new_segment = False
+            else:
+                current_paragraph_x.append(line)
+                if document_index > test_split * num_docs_to_read:
+                    y_tst.append(0)
                 else:
                     y_tr.append(0)
-                    current_paragraph_x.append(line)
             list_of_all_words.append(line.split(" "))
             sentence_document_mapping[sentence_index] = document_index
             sentence_index += 1
@@ -196,10 +190,6 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
                               truncating='post')
     # 80/20 train-test split
     x_tr, x_tst = sequences[:len(y_tr)], sequences[len(y_tr):]
-
-    print(len(x_tr), len(y_tr))
-    print(len(x_tst), len(y_tst))
-
 
     del sequences
 
