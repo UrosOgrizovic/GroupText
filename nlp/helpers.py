@@ -1,6 +1,7 @@
 import numpy as np
 import os
 
+
 def abbreviate_num_to_str(num):
     if num >= 100000:
         num = int(round(num / 100000, 2) * 100)
@@ -30,6 +31,9 @@ def find_avg_doc_length_in_batch(x):
     for doc in x:
         avg_doc_len += len(doc)
     avg_doc_len /= len(x)
+    if avg_doc_len > 80:
+        # capping doc len to prevent` OOM
+        avg_doc_len = 80
     return round(avg_doc_len)
 
 
@@ -60,22 +64,3 @@ def get_path(num_docs, set='tr'):
     """
     num = abbreviate_num_to_str(num_docs)
     return f'data/dump_{set}_{num}.pkl'
-
-
-def calculate_embedding_matrix(word_index, embedding_dim):
-    embeddings_index = {}
-    f = open(os.path.join("glove", 'glove.6B.' +
-                          str(embedding_dim) + 'd.txt'), encoding="utf-8")
-    for line in f:
-        values = line.split()
-        word = values[0]
-        coefs = np.asarray(values[1:], dtype='float32')
-        embeddings_index[word] = coefs
-    f.close()
-    embedding_matrix = np.zeros((len(word_index) + 1, embedding_dim))
-    for word, i in word_index.items():
-        embedding_vector = embeddings_index.get(word)
-        if embedding_vector is not None:
-            # words not found in embedding index will be all-zeros.
-            embedding_matrix[i] = embedding_vector
-    return embedding_matrix

@@ -44,7 +44,12 @@ def regex(text):
     text = re.sub(r"http\S+", "URL", text)  # replace urls
     text = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}").sub(
         r"IPADDRESS", text)  # replace ip addresses
-    text = replace_digits(text, "#")
+    # text = replace_digits(text, "#")
+    text = ''.join(char for char in text if not char.isdigit()) # remove digits
+    text = text.replace(' s ', '')  # left over from e.g. "90s"
+    text = text.replace(' \'s ', '')    # left over from e.g. "'90s"
+    text = text.replace(' % ', '')  # left over from e.g. "50%"
+    text = text.replace(' . ', '')  # left over from e.g. "45.32"
     return text
 
 
@@ -93,7 +98,8 @@ def parse_sentence(sent):
     sent = remove_accented_chars(sent)
     sent = regex(sent)
     sent = replace_newline(sent)
-    return lemmatization(sent)
+    return sent
+    # return lemmatization(sent)
 
 
 def lemmatization(sent):

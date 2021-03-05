@@ -5,8 +5,8 @@ import helpers
 from keras.preprocessing.text import Tokenizer
 import numpy as np
 from keras.preprocessing.sequence import pad_sequences
-
-SEGMENT_DELIMITER = "========"
+import os
+from constants import SEGMENT_DELIMITER
 
 
 def plot_training_and_validation_data(history, num_docs):
@@ -42,24 +42,20 @@ def plot_training_and_validation_data(history, num_docs):
 
 def read_docs_in_batches(path, batch_size, curr_pos, num_in_path, sentence_document_mapping,
                         list_of_all_words, test_split, y_tr, y_tst, sentence_index, document_index,
-                        num_docs_to_read):
+                        num_docs_to_read, num_docs_loaded):
     current_paragraph_x = []
     starts_new_segment = False
     batch_index = 0
-    print(f"Loading {batch_size} documents...")
-    print(f'Curr pos {curr_pos}')
     with open(path, "rt", encoding="utf-8") as myfile:
         myfile.seek(curr_pos, 0)     # move to where reading was stopped last time
         while batch_index < batch_size:
-            # line = next(myfile)[:-2]
             line = myfile.readline()[:-2]
             # new document, increase document_index
             if "1,preface" in line:
                 document_index += 1
                 batch_index += 1
                 starts_new_segment = True  # the next line starts a new segment
-                if current_paragraph_x:
-                    current_paragraph_x = []
+                current_paragraph_x = []
                 continue
             # skip these lines, I'm not sure if they are meaningful or metadata
             elif line.startswith("\x00") or line.startswith("wiki_") \
@@ -76,31 +72,31 @@ def read_docs_in_batches(path, batch_size, curr_pos, num_in_path, sentence_docum
                 # the next line starts a new segment
                 starts_new_segment = True
                 continue    # no need to add segment title to data
-            elif starts_new_segment:
-                current_paragraph_x.append(line)
-                starts_new_segment = False
-                if document_index > test_split * num_docs_to_read:
-                    y_tst.append(1)
-                else:
-                    y_tr.append(1)
             else:
                 current_paragraph_x.append(line)
+                label = 0.
+                if starts_new_segment:
+                    starts_new_segment = False
+                    label = 1.  # sentence starts new segment, i.e. label is 1
                 if document_index > test_split * num_docs_to_read:
-                    y_tst.append(0)
+                    y_tst.append(label)
                 else:
-                    y_tr.append(0)
+                    y_tr.append(label)
             list_of_all_words.append(line.split(" "))
             sentence_document_mapping[sentence_index] = document_index
-            sentence_index += 1
+            sentence_index += 1     # every line is a new sentence
         curr_pos = myfile.tell()    # get position after reading
-    print("Finished loading documents")
-    # dump_to_path(list_of_all_words, f'list_of_all_words_{num_in_path}.pkl', 'ab')
+    print(f'Finished loading {num_docs_loaded} documents')
     return y_tr, y_tst, list_of_all_words, sentence_document_mapping, curr_pos, sentence_index, document_index
 
 
 def read_dumps_in_batches(path, batch_size, curr_pos):
     x, y = [], []
     batch_idx = 0
+    threshold = 1 - batch_size / 10**(len(str(batch_size))+1)
+    # useful because often os.path.getsize(path) % batch_size != 0
+    if curr_pos > threshold * os.path.getsize(path):
+        curr_pos = 0
     with open(path, 'rb') as f:
         f.seek(curr_pos, 0)     # move to where reading was stopped last time
         unpickler = pickle.Unpickler(f)
@@ -158,12 +154,10 @@ def get_tokenizer(path, list_of_all_words, num_words_to_keep):
     tokenizer = load_from_path(path)
     if tokenizer is None:
         # convert strings to numbers
-        # tokenizer = Tokenizer(num_words=num_words_to_keep)
-        tokenizer = Tokenizer()
+        tokenizer = Tokenizer(num_words_to_keep)
         print("Fitting tokenizer...")
         tokenizer.fit_on_texts(list_of_all_words)
         print("Finished fitting tokenizer")
-        print(f'Tokenizer word index len: {len(tokenizer.word_index)}')
         dump_to_path(tokenizer, path)
     return tokenizer
 
@@ -173,11 +167,11 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
     """Processes loaded data and dumps it via pickle.
 
     Args:
-        y_tr (list): [description]
-        y_tst (list): [description]
-        list_of_all_words (list): [description]
-        sentence_document_mapping (dict): [description]
-        sen_pad_len (int): [description]
+        y_tr (list)
+        y_tst (list)
+        list_of_all_words (list)
+        sentence_document_mapping (dict): {sentence_idx: document_idx}
+        sen_pad_len (int)
         tokenizer (keras.preprocessing.text.Tokenizer)
         num_in_path (str): e.g. '1k', '10k', '100k'
     """
@@ -188,6 +182,7 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
     # because beginnings are more important for this task)
     sequences = pad_sequences(sequences, sen_pad_len, padding='post',
                               truncating='post')
+
     # 80/20 train-test split
     x_tr, x_tst = sequences[:len(y_tr)], sequences[len(y_tr):]
 
@@ -224,7 +219,6 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
 
     del sentence_document_mapping
 
-
     documents_x_tr[-1].append(x_tr[-1])
     documents_x_tst[-1].append(x_tst[-1])
     np.append(documents_y_tr[-1], y_tr[-1])
@@ -257,7 +251,7 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
     dump_x_y(x_val, y_val, f'data/dump_val_{num_in_path}.pkl')
     dump_x_y(x_tst, y_tst, f'data/dump_tst_{num_in_path}.pkl')
 
-    # help determine pos_weight in rnn_model.custom_loss() correctly
+    # this helps determine pos_weight in rnn_model.custom_loss() correctly
     # percentage = helpers.get_percentage_of_segment_starting_sentences(y_tr, doc_pad_len)
     # print(f"Percentage of segment-starting sentences: {percentage}%")
 
@@ -274,10 +268,10 @@ def process_loaded_docs(y_tr, y_tst, list_of_all_words, sentence_document_mappin
 
 
 if __name__ == '__main__':
-    num_docs = 1000
+    num_docs = 10000
     num_in_path = helpers.abbreviate_num_to_str(num_docs)
-
-    x, y = load_x_y(f'data/dump_tr_{num_in_path}.pkl')
-    print(x[1])
-    print(y[1])
-    print(len(x), len(y))
+    path = f'data/dump_tr_{num_in_path}.pkl'
+    batch_size = 32
+    curr_pos = 0
+    x, y, curr_pos = read_dumps_in_batches(path, batch_size, curr_pos)
+    print(x)

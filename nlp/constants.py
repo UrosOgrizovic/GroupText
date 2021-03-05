@@ -1,3 +1,6 @@
+SEGMENT_DELIMITER = "========"
+AVG_SEN_LEN = 20
+
 TEXT_1 = "44\nChapter 2 The Role of Judicial Review\nbeing considered, since they may be separated from one of their " \
          "parents and/or uprooted\nfrom their country of citizenship, where they have settled and have " \
          "connections.\nImmigration officers who make H&C decisions are provided with a set of guidelines,\ncontained " \

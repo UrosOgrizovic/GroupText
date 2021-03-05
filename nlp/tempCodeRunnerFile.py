@@ -1,1 +1,0 @@
-curr_pos
